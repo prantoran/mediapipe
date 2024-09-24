@@ -113,3 +113,11 @@ try-import %workspace%/.configure.bazelrc
 
 # This bazelrc file can be used for user-specific custom build settings.
 try-import %workspace%/.user.bazelrc
+
+# WASM
+build --incompatible_enable_cc_toolchain_resolution # https://github.com/emscripten-core/emsdk/blob/main/bazel/README.md
+build:wasm --crosstool_top=@emsdk//emscripten_toolchain:everything
+build:wasm --cpu=wasm
+build:wasm --host_crosstool_top=@bazel_tools//tools/cpp:toolchain
+# Disable sandbox environment because emsdk caches files by writing to home directory.
+build:wasm --spawn_strategy=local

@@ -1,0 +1,108 @@
+# MediaPipe graph that performs selfie segmentation with TensorFlow Lite on GPU.
+
+# GPU buffer. (GpuBuffer)
+input_stream: "input_video"
+
+# An integer 0 or 1. Use 0 to select a general-purpose model (operating on a
+# 256x256 tensor), and 1 to select a model (operating on a 256x144 tensor) more
+# optimized for landscape images. If unspecified, functions as set to 0. (int)
+# input_side_packet: "MODEL_SELECTION:model_selection"
+
+# Output image with rendered results. (GpuBuffer)
+output_stream: "output_video"
+
+# Throttles the images flowing downstream for flow control. It passes through
+# the very first incoming image unaltered, and waits for downstream nodes
+# (calculators and subgraphs) in the graph to finish their tasks before it
+# passes through another image. All images that come in while waiting are
+# dropped, limiting the number of in-flight images in most part of the graph to
+# 1. This prevents the downstream nodes from queuing up incoming images and data
+# excessively, which leads to increased latency and memory usage, unwanted in
+# real-time mobile applications. It also eliminates unnecessarily computation,
+# e.g., the output produced by a node may get dropped downstream if the
+# subsequent nodes are still busy processing previous inputs.
+node {
+  calculator: "FlowLimiterCalculator"
+  input_stream: "input_video"
+  input_stream: "FINISHED:output_video"
+  input_stream_info: {
+    tag_index: "FINISHED"
+    back_edge: true
+  }
+  output_stream: "throttled_input_video"
+}
+
+# Subgraph that performs selfie segmentation.
+node {
+  calculator: "SelfieSegmentationGpu"
+  input_stream: "IMAGE:throttled_input_video"
+  output_stream: "SEGMENTATION_MASK:segmentation_mask"
+#  input_side_packet: "MODEL_SELECTION:model_selection"
+}
+
+
+
+
+node {
+  calculator:"BilateralFilterCalculator"
+  input_stream: "IMAGE_GPU:throttled_input_video"
+  output_stream: "IMAGE_GPU:bilateral_output_video"
+  node_options {
+    [type.googleapis.com/mediapipe.BilateralFilterCalculatorOptions] {
+      sigma_space: 40
+      sigma_color: 0.4
+    }
+  }
+}
+
+
+node {
+  calculator: "ToImageCalculator"
+  input_stream: "IMAGE_GPU:segmentation_mask"
+  output_stream: "IMAGE:segmentation_mask_image"
+}
+
+
+# Smoothes segmentation to reduce jitter.
+node {
+  calculator: "SegmentationSmoothingCalculator"
+  input_stream: "MASK:segmentation_mask_image"   # current frame raw
+  input_stream: "MASK_PREVIOUS:prev_filtered_segmentation_mask"
+  output_stream: "MASK_SMOOTHED:filtered_segmentation_mask"  # current frame smoothed
+  node_options {
+    [type.googleapis.com/mediapipe.SegmentationSmoothingCalculatorOptions] {
+      combine_with_previous_ratio: 0.5
+    }
+  }
+}
+
+# Caches the filtered segmentation mask
+node {
+  calculator: "PreviousLoopbackCalculator"
+  input_stream: "MAIN:segmentation_mask"   # Tick signal
+  input_stream: "LOOP:filtered_segmentation_mask"
+  input_stream_info: {
+    tag_index: "LOOP"
+    back_edge: true
+  }
+  output_stream: "PREV_LOOP:prev_filtered_segmentation_mask"
+}
+
+# Converts the incoming Image into the corresponding GpuBuffer type.
+node: {
+  calculator: "FromImageCalculator"
+  input_stream: "IMAGE:filtered_segmentation_mask"
+  output_stream: "IMAGE_GPU:segmentation_mask_filtered_gpu"
+}
+
+
+node {
+  calculator: "MaskOverlayCalculator"
+  input_stream: "VIDEO:0:bilateral_output_video"
+  input_stream: "VIDEO:1:throttled_input_video"
+  input_stream: "MASK:segmentation_mask_filtered_gpu"
+  output_stream: "OUTPUT:output_video"
+}
+
+
+

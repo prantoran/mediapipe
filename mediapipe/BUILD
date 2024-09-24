@@ -197,15 +197,41 @@ config_setting_and_platform(
 )
 
 # Emscripten (WebAssembly)
-config_setting_and_platform(
-    name = "emscripten",
-    constraint_values = [
-        "@platforms//cpu:wasm32",
-    ],
-    visibility = ["//visibility:public"],
-)
+# config_setting_and_platform(
+#     name = "emscripten",
+#     constraint_values = [
+#         "@platforms//cpu:wasm32",
+#     ],
+#     visibility = ["//visibility:public"],
+# )
 
 exports_files(
     ["provisioning_profile.mobileprovision"],
     visibility = ["//visibility:public"],
+)
+
+
+# Emscripten for WASM
+
+config_setting(
+    name = "emscripten",
+    values = {"crosstool_top": "@emsdk//emscripten_toolchain:everything"},
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "emscripten_wasm",
+    values = {
+        "crosstool_top": "@emsdk//emscripten_toolchain:everything",
+        "cpu": "wasm",
+    },
+)
+
+config_setting(
+    name = "emscripten_wasmsimd",
+    values = {
+        "crosstool_top": "@emsdk//emscripten_toolchain:everything",
+        "cpu": "wasm",
+        "copt": "-msimd128",
+    },
 )

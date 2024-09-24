@@ -817,7 +817,9 @@ cc_library(
         "@org_tensorflow//tensorflow/lite/c:common",
         "@org_tensorflow//tensorflow/lite/core:framework",
     ] + select({
-        "//mediapipe:emscripten": [],
+        "//mediapipe:emscripten": [
+            "//mediapipe/util:cpu_util",
+        ],
         "//conditions:default": [
             "//mediapipe/util:cpu_util",
         ],
@@ -892,6 +894,7 @@ cc_library(
     name = "inference_calculator_gl_if_compute_shader_available",
     deps = selects.with_or({
         ":compute_shader_unavailable": [],
+        "//mediapipe:emscripten_wasm": [],
         "//conditions:default": [
             ":inference_calculator_gl",
             ":inference_calculator_gl_advanced",
@@ -1400,6 +1403,9 @@ cc_library(
         "//mediapipe:emscripten": [
             "//mediapipe/util/android/file/base",
         ],
+        "//mediapipe:emscripten_wasm": [
+            "//mediapipe/util/android/file/base",
+        ],
         "//conditions:default": [
             "//mediapipe/framework/port:file_helpers",
         ],
@@ -1512,8 +1518,13 @@ cc_library(
         "@com_google_absl//absl/log:absl_log",
     ] + select({
         "//mediapipe/gpu:disable_gpu": [],
+        "//mediapipe:emscripten_wasm": [
+            ":image_to_tensor_calculator_gpu_deps",
+            ":image_to_tensor_converter_gl_texture"
+        ],
         "//conditions:default": [":image_to_tensor_calculator_gpu_deps"],
     }) + select({
+        "//mediapipe:emscripten_wasm": [],
         "//mediapipe/framework/port:disable_opencv": [],
         "//conditions:default": [":image_to_tensor_converter_opencv"],
     }) + select({
@@ -1534,6 +1545,11 @@ cc_library(
             "//mediapipe/gpu:gl_calculator_helper",
             "//mediapipe/gpu:gpu_buffer",
             "//mediapipe/gpu:gpu_service",
+        ],
+        "//mediapipe:emscripten_wasm": [
+            # ":image_to_tensor_converter_gl_buffer",
+            "//mediapipe/gpu:gl_calculator_helper",
+            "//mediapipe/gpu:gpu_buffer",
         ],
         "//mediapipe:emscripten": [
             ":image_to_tensor_converter_gl_texture",
@@ -1905,6 +1921,7 @@ cc_library(
         "//conditions:default": [":tensors_to_segmentation_calculator_gpu_deps"],
     }) + select({
         "//mediapipe/framework/port:disable_opencv": [],
+        "//mediapipe:emscripten_wasm": [],
         "//conditions:default": [
             ":tensors_to_segmentation_converter_opencv",
         ],

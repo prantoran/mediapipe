@@ -214,10 +214,10 @@ http_archive(
 # 2020-08-21
 http_archive(
     name = "com_github_glog_glog",
-    strip_prefix = "glog-0.6.0",
-    sha256 = "8a83bf982f37bb70825df71a9709fa90ea9f4447fb3c099e1d720a439d88bad6",
+    strip_prefix = "glog-0a2e5931bd5ff22fd3bf8999eb8ce776f159cda6",
+    sha256 = "58c9b3b6aaa4dd8b836c0fd8f65d0f941441fb95e27212c5eeb9979cfd3592ab",
     urls = [
-        "https://github.com/google/glog/archive/v0.6.0.tar.gz",
+        "https://github.com/google/glog/archive/0a2e5931bd5ff22fd3bf8999eb8ce776f159cda6.zip",
     ],
 )
 http_archive(
@@ -706,3 +706,22 @@ http_archive(
     urls = ["https://github.com/nlohmann/json/releases/download/v3.9.1/include.zip"],
     build_file = "@//third_party:nlohmann.BUILD",
 )
+
+# 23-12-12 copied from https://github.com/emscripten-core/emsdk/blob/main/bazel/README.md
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_archive(
+    name = "emsdk",
+    sha256 = "6b206e135ccc3b0d6c02e948eb4b8b95521593b5b4d9788795269bbf6640fcb2",
+    strip_prefix = "emsdk-4e2496141eda15040c44e9bbf237a1326368e34c/bazel",
+    url = "https://github.com/emscripten-core/emsdk/archive/4e2496141eda15040c44e9bbf237a1326368e34c.tar.gz",
+)
+
+load("@emsdk//:deps.bzl", emsdk_deps = "deps")
+emsdk_deps()
+
+load("@emsdk//:emscripten_deps.bzl", emsdk_emscripten_deps = "emscripten_deps")
+emsdk_emscripten_deps(emscripten_version = "3.1.51")
+
+load("@emsdk//:toolchains.bzl", "register_emscripten_toolchains")
+register_emscripten_toolchains()

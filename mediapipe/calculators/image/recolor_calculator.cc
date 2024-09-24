@@ -18,9 +18,13 @@
 #include "mediapipe/calculators/image/recolor_calculator.pb.h"
 #include "mediapipe/framework/calculator_framework.h"
 #include "mediapipe/framework/formats/image_frame.h"
+
+#if !defined(__EMSCRIPTEN__)
 #include "mediapipe/framework/formats/image_frame_opencv.h"
 #include "mediapipe/framework/port/opencv_core_inc.h"
 #include "mediapipe/framework/port/opencv_imgproc_inc.h"
+#endif // !defined(__EMSCRIPTEN__)
+
 #include "mediapipe/framework/port/ret_check.h"
 #include "mediapipe/framework/port/status.h"
 #include "mediapipe/util/color.pb.h"
@@ -39,6 +43,7 @@ constexpr char kMaskCpuTag[] = "MASK";
 constexpr char kGpuBufferTag[] = "IMAGE_GPU";
 constexpr char kMaskGpuTag[] = "MASK_GPU";
 
+#if !defined(__EMSCRIPTEN__)
 inline cv::Vec3b Blend(const cv::Vec3b& color1, const cv::Vec3b& color2,
                        float weight, int invert_mask,
                        int adjust_with_luminance) {
@@ -53,6 +58,7 @@ inline cv::Vec3b Blend(const cv::Vec3b& color1, const cv::Vec3b& color2,
 
   return color1 * (1.0 - mix_value) + color2 * mix_value;
 }
+#endif // !defined(__EMSCRIPTEN__)
 
 }  // namespace
 
@@ -225,6 +231,7 @@ absl::Status RecolorCalculator::Close(CalculatorContext* cc) {
   return absl::OkStatus();
 }
 
+#if !defined(__EMSCRIPTEN__)
 absl::Status RecolorCalculator::RenderCpu(CalculatorContext* cc) {
   if (cc->Inputs().Tag(kMaskCpuTag).IsEmpty()) {
     cc->Outputs()
@@ -297,6 +304,24 @@ absl::Status RecolorCalculator::RenderCpu(CalculatorContext* cc) {
 
   return absl::OkStatus();
 }
+
+#else 
+absl::Status RecolorCalculator::RenderCpu(CalculatorContext* cc) {
+  if (cc->Inputs().Tag(kMaskCpuTag).IsEmpty()) {
+    cc->Outputs()
+        .Tag(kImageFrameTag)
+        .AddPacket(cc->Inputs().Tag(kImageFrameTag).Value());
+    return absl::OkStatus();
+  }
+  // Get inputs and setup output.
+  const auto& input_img = cc->Inputs().Tag(kImageFrameTag).Get<ImageFrame>();
+  const auto& mask_img = cc->Inputs().Tag(kMaskCpuTag).Get<ImageFrame>();
+
+
+  return absl::OkStatus();
+}
+#endif // !defined(__EMSCRIPTEN__)
+
 
 absl::Status RecolorCalculator::RenderGpu(CalculatorContext* cc) {
   if (cc->Inputs().Tag(kMaskGpuTag).IsEmpty()) {
@@ -481,7 +506,8 @@ absl::Status RecolorCalculator::InitGpu(CalculatorContext* cc) {
 
       float mix_value = weight.MASK_COMPONENT * luminance;
 
-      fragColor = mix(color1, color2, mix_value);
+      fragColor = color2;
+      // fragColor = mix(color1, color2, mix_value);
     }
   )";
 

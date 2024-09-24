@@ -44,7 +44,7 @@
 #endif  // MEDIAPIPE_OPENGL_ES_VERSION >= MEDIAPIPE_OPENGL_ES_31
 #endif  // !MEDIAPIPE_DISABLE_GPU
 
-#if !MEDIAPIPE_DISABLE_OPENCV
+#if !MEDIAPIPE_DISABLE_OPENCV && !defined(__EMSCRIPTEN__)
 #include "mediapipe/calculators/tensor/tensors_to_segmentation_converter_opencv.h"
 #endif  // !MEDIAPIPE_DISABLE_OPENCV
 
@@ -139,7 +139,7 @@ class TensorsToSegmentationCalculator : public Node {
                           "processing is disabled.";
 #endif  // !MEDIAPIPE_DISABLE_GPU
     } else {
-#if !MEDIAPIPE_DISABLE_OPENCV
+#if !MEDIAPIPE_DISABLE_OPENCV && !defined(__EMSCRIPTEN__)
       if (!cpu_converter_) {
         MP_ASSIGN_OR_RETURN(cpu_converter_, CreateOpenCvConverter(options_));
       }
@@ -240,7 +240,7 @@ absl::Status TensorsToSegmentationCalculator::Process(CalculatorContext* cc) {
     RET_CHECK_FAIL() << "GPU processing disabled.";
 #endif  // !MEDIAPIPE_DISABLE_GPU
   } else {
-#if !MEDIAPIPE_DISABLE_OPENCV
+#if !MEDIAPIPE_DISABLE_OPENCV && !defined(__EMSCRIPTEN__)
     // Lazily initialize converter.
     MP_RETURN_IF_ERROR(InitConverterIfNecessary(use_gpu, cc));
     MP_ASSIGN_OR_RETURN(

@@ -248,7 +248,7 @@ absl::Status GlContext::GetGlExtensions() {
   // sometimes provides this function, its default library implementation
   // appears to only provide glGetString, so we skip this for Emscripten
   // platforms to avoid possible undefined symbol or runtime errors.
-#if (GL_VERSION_3_0 || GL_ES_VERSION_3_0) && !defined(__EMSCRIPTEN__)
+#if (GL_VERSION_3_0 || GL_ES_VERSION_3_0)
   if (!SymbolAvailable(&glGetStringi)) {
     ABSL_LOG(ERROR)
         << "GL major version > 3.0 indicated, but glGetStringi not "
@@ -274,7 +274,7 @@ absl::Status GlContext::GetGlExtensions() {
   return absl::OkStatus();
 #else
   return absl::InternalError("GL version mismatch in GlGetExtensions");
-#endif  // (GL_VERSION_3_0 || GL_ES_VERSION_3_0) && !defined(__EMSCRIPTEN__)
+#endif  // (GL_VERSION_3_0 || GL_ES_VERSION_3_0)
 }
 
 // Same as GetGlExtensions() above, but for pre-GL3.0, where glGetStringi did

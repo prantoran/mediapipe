@@ -25,12 +25,16 @@ cc_library(
     name = "renderer_calculators",
     deps = [
         "//mediapipe/calculators/core:split_proto_list_calculator",
-        "//mediapipe/calculators/util:annotation_overlay_calculator",
         "//mediapipe/calculators/util:detections_to_render_data_calculator",
         "//mediapipe/calculators/util:landmarks_to_render_data_calculator",
         "//mediapipe/calculators/util:rect_to_render_data_calculator",
         "//mediapipe/graphs/face_mesh/calculators:face_landmarks_to_render_data_calculator",
-    ],
+    ]+ select({
+        "//mediapipe:emscripten_wasm": [],
+        "//conditions:default": [
+            "//mediapipe/calculators/util:annotation_overlay_calculator",
+        ]
+    }),
 )
 
 mediapipe_simple_subgraph(

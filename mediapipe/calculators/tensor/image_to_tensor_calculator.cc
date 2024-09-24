@@ -41,7 +41,9 @@
 #include "mediapipe/gpu/webgpu/webgpu_check.h"
 
 #if !MEDIAPIPE_DISABLE_OPENCV
+#ifndef __EMSCRIPTEN__
 #include "mediapipe/calculators/tensor/image_to_tensor_converter_opencv.h"
+#endif // __EMSCRIPTEN__
 #elif MEDIAPIPE_ENABLE_HALIDE
 #include "mediapipe/calculators/tensor/image_to_tensor_converter_frame_buffer.h"
 #endif
@@ -311,7 +313,7 @@ class ImageToTensorCalculator : public Node {
       }
     } else {
       if (!cpu_converter_) {
-#if !MEDIAPIPE_DISABLE_OPENCV
+#if !MEDIAPIPE_DISABLE_OPENCV && !defined(__EMSCRIPTEN__)
         MP_ASSIGN_OR_RETURN(
             cpu_converter_,
             CreateOpenCvConverter(
